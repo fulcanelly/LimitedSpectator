@@ -1,0 +1,3 @@
+[submodule "lib/tgbridge"]
+	path = lib/tgbridge
+	url = https://github.com/fulcanelly/mctg-bridge
