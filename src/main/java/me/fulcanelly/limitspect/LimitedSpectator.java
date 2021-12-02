@@ -4,6 +4,7 @@ import me.fulcanelly.tgbridge.Bridge;
 import me.fulcanelly.tgbridge.tools.twofactor.register.SignupLoginReception;
 
 import java.util.WeakHashMap;
+import java.util.function.Consumer;
 
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -21,11 +22,16 @@ public class LimitedSpectator extends JavaPlugin {
             sender.sendMessage("Only players can use this command");
             return true;
         } 
-        if (this.reception.getTgByUser(sender.getName()).isEmpty()) {
-            sender.sendMessage("Only logged-in with telegram players can do it");
-            return true;
-        } 
-        Player player = (Player)sender;
+
+        this.reception.getTgByUser(sender.getName())
+            .<Consumer<Player>>map(ignored -> this::dispatchPlayerGameMode)
+            .orElse(this::informOnlyLoggedCanUse)
+            .accept((Player)sender);
+        return true;
+    }
+
+
+    void dispatchPlayerGameMode(Player player) {
         if (player.getGameMode().equals(GameMode.SPECTATOR)) {
             onSpecToSurv(player);
             player.setGameMode(GameMode.SURVIVAL);
@@ -33,7 +39,10 @@ public class LimitedSpectator extends JavaPlugin {
             onSurvToSpec(player);
             player.setGameMode(GameMode.SPECTATOR);
         } 
-        return true;
+    }
+
+    void informOnlyLoggedCanUse(Player player) {
+        player.sendMessage("Only logged-in with telegram players can do it");
     }
 
     WeakHashMap<Player, Location> changePosByPlayer = new WeakHashMap<>();
