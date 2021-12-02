@@ -131,11 +131,12 @@
             <artifactId>maven-shade-plugin</artifactId>
             <configuration>
                 <relocations>
-                    <relocation>
+                    <!--<relocation>
                        <pattern>com.google.inject</pattern>
                         <shadedPattern>com.google.inject.tg_bridge_shaded</shadedPattern>
                     
                     </relocation>
+                -->
                 </relocations>
             <filters>
                 <filter>
