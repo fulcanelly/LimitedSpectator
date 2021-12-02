@@ -18,7 +18,7 @@ public class LimitedSpectator extends JavaPlugin {
             return true;
         } 
         if (this.reception.getTgByUser(sender.getName()).isEmpty()) {
-            sender.sendMessage("Only logined with telegram players can do it");
+            sender.sendMessage("Only logged-in with telegram players can do it");
             return true;
         } 
         Player player = (Player)sender;
