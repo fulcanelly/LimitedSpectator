@@ -18,15 +18,16 @@ public class LimitedSpectator extends JavaPlugin {
     SignupLoginReception reception;
 
     public boolean onCommand(CommandSender sender, Command cmd, String cname, String[] args) {
-        if (sender instanceof org.bukkit.command.ConsoleCommandSender) {
-            sender.sendMessage("Only players can use this command");
-            return true;
-        } 
 
-        this.reception.getTgByUser(sender.getName())
-            .<Consumer<Player>>map(ignored -> this::dispatchPlayerGameMode)
-            .orElse(this::informOnlyLoggedCanUse)
-            .accept((Player)sender);
+        if (sender instanceof Player player) {
+            this.reception.getTgByUser(sender.getName())
+                .<Consumer<Player>>map(ignored -> this::dispatchPlayerGameMode)
+                .orElse(this::informOnlyLoggedCanUse)
+                .accept(player);
+        }
+
+        sender.sendMessage("Only players can use this command");
+
         return true;
     }
 
