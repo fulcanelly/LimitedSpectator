@@ -52,8 +52,9 @@ public class LimitedSpectator extends JavaPlugin {
     }   
 
     void onSpecToSurv(Player player) {
-        player.teleport(changePosByPlayer.get(player));
+        player.teleport(changePosByPlayer.getOrDefault(changePosByPlayer.get(player), player.getLocation()));
         changePosByPlayer.remove(player);
+        ;
     }
 
 
