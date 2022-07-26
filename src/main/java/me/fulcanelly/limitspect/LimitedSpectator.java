@@ -25,6 +25,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
@@ -318,6 +319,56 @@ class RightClickObserver extends Action<Boolean, PlayerInteractEvent> {
     
 }
 
+class DelayedItem<T> {  
+    BlockingQueue<T> queue = new ArrayBlockingQueue<>(6);
+    
+    @SneakyThrows
+    T getItem() {
+        return queue.take();
+    }
+
+    void putItem(T val) {
+        queue.add(val);
+    }
+
+    boolean isEmpty() {
+        return queue.isEmpty();
+    }
+
+    boolean isHaveValue() {
+        return ! isEmpty();
+    }
+
+
+}
+
+@With @AllArgsConstructor @NoArgsConstructor @Data
+class ExpectTextHidingAction extends Action<String, AsyncPlayerChatEvent> {
+
+    DelayedItem<String> item = new DelayedItem<>();
+    boolean expects = false;
+
+    @Override
+    public String get() {
+        return item.getItem();
+    }
+
+    @Override
+    public boolean isHaveToHandle() {
+        return item.isHaveValue();
+    }
+
+    @Override
+    public synchronized void consume(AsyncPlayerChatEvent event) {
+        if (expects) {
+            item.putItem(event.getMessage());
+            event.setCancelled(true);
+            this.setExpects(false);
+        }
+        
+    }
+    
+}
 @Data
 class MultiplexedBlockBreakingObserver {
 
@@ -477,7 +528,9 @@ class UserScenario extends BaseScenario {
             if (res.isRight()) {
                 sayRed("Ok");
             }
-         }
+
+            
+        }
     }
 
   
