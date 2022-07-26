@@ -135,6 +135,12 @@ class ScenarioListenerGlue implements Listener{
         ).getBreakingObserver().consume(event);
     }
 
+    @EventHandler 
+    public void onChatEvent(AsyncPlayerChatEvent event) {
+        scenarioByUsername.get(
+            event.getPlayer().getName()
+        ).getExpectTextHidingAction().consume(event);
+    }
 
     @EventHandler
     public void onLeftClick(PlayerInteractEvent event) {
@@ -434,9 +440,20 @@ abstract class BaseScenario implements SwitchableScenario {
     
     BlockBreakingObserver breakingObserver = new BlockBreakingObserver();
     RightClickObserver rightClickObserver = new RightClickObserver();
-
+    ExpectTextHidingAction expectTextHidingAction = new ExpectTextHidingAction();
+    
     final Player player;
     Thread thread;
+
+
+    protected ExpectTextHidingAction setupExpectTextHidingAction() {
+        return this.expectTextHidingAction = new ExpectTextHidingAction()
+            .withExpects(true);
+    }
+
+    String expectText() {
+        return setupExpectTextHidingAction().get();
+    }
 
     protected BlockBreakingObserver setupBreakingObserver(Location target) {
         return this.breakingObserver = new BlockBreakingObserver()
@@ -455,6 +472,11 @@ abstract class BaseScenario implements SwitchableScenario {
         breakingObserver = setupBreakingObserver(loc);
         breakingObserver.waitToBreak();
         return breakingObserver;
+    }
+
+
+    void say(String text) {
+        player.sendMessage(text);
     }
 
 
@@ -529,6 +551,8 @@ class UserScenario extends BaseScenario {
                 sayRed("Ok");
             }
 
+            say("enter command");
+            say("your input: " + expectText());
             
         }
     }
