@@ -4,8 +4,7 @@ description: Spectator mode for limited set of users
 author: fulcanelly
 website: ${url}
 api-version: 1.16
-depend:
-  - tg-bridge
+
 
   
 main: me.fulcanelly.limitspect.LimitedSpectator
