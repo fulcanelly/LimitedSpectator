@@ -4,13 +4,20 @@ package me.fulcanelly.limitspect;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.net.Socket;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.WeakHashMap;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
+
 import static org.bukkit.event.block.Action.*;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -85,6 +92,25 @@ public class LimitedSpectator extends JavaPlugin implements Listener {
 
     public void onEnable() {
 
+        var world = getServer().getWorlds().get(0);
+        
+        var finder = new AirPathFinder()
+            .withFinish(new Location(world, 0, 5000, 0))
+            .withStart(new Location(world, 1, 5003, 2)
+        ).calckPath();
+
+        // System.out.println(
+        //     finder.getVisited()
+        // );
+
+        System.out.println(finder.getPath());
+
+        System.out.println(
+            finder.getVisited().size() + " - size"
+        );
+        
+
+        ;
        // Bridge plugin = (Bridge)getServer().getPluginManager()
        getServer().getPluginManager().registerEvents(this, this);
        getServer().getPluginManager()
@@ -96,7 +122,7 @@ public class LimitedSpectator extends JavaPlugin implements Listener {
     }
 }
 
-class ScenarioListenerGlue implements Listener{
+class ScenarioListenerGlue implements Listener {
 
     Map<String, UserScenario> scenarioByUsername = new HashMap<>();
 
@@ -117,6 +143,7 @@ class ScenarioListenerGlue implements Listener{
         System.out.println("exit3");
         System.out.println("map:" + scenarioByUsername);
 
+        
     }
 
 
@@ -507,6 +534,148 @@ class RecordPicture {
 
 }
 
+@Data @AllArgsConstructor @With @NoArgsConstructor
+class LinkedLocation {
+
+    Location current;
+    LinkedLocation parent;
+    int counter = 0;
+
+}
+
+@Data @With @AllArgsConstructor @NoArgsConstructor
+class AirPathFinder {
+    Location start, finish;
+    int counter = 0;
+
+    List<LinkedLocation> visited = new ArrayList<LinkedLocation>();
+
+    List<Location> visitedAsLocations() {
+        return visited.stream().map(v -> v.getCurrent()).toList();
+    }
+
+    Stream<Location> getNonVisitedEmptyNear(Location loc) {
+        var near = Stream.of(
+            loc.clone().add(-1, 0, 0),
+            loc.clone().add(1, 0, 0),
+            loc.clone().add(0, 1, 0),
+            loc.clone().add(0, -1, 0),
+            loc.clone().add(0, 0, 1),
+            loc.clone().add(0, 0, -1)
+        ).filter(
+            l -> l.getBlock().isEmpty()
+        ).filter(
+            l -> ! visitedAsLocations().stream().anyMatch(i -> l.equals(i))
+        ).toList();
+
+        // System.out.println("visited: " + visitedAsLocations());
+        // System.out.println("near List: " + near);
+        return near.stream();
+        
+    }
+
+    Stream<LinkedLocation> getAllFromLevel(final int level) {
+        return visited.stream()
+            .filter(l -> l.getCounter() == level);
+    }
+
+    int getMaxCounter(List<LinkedLocation> list) {
+        return list.stream()
+            .max((a, b) -> a.counter - b.counter)
+            .get().getCounter();
+    }
+
+    List<Location> getPath() {
+        var res = new ArrayList<Location>(
+            List.of(start)
+        );
+
+        var linked = visited.stream()
+            .filter(it -> it.getCurrent().equals(start))
+            .findAny().get();
+
+        while (linked.getParent() != null) {
+            linked = linked.getParent();
+            res.add(linked.getCurrent());            
+        } 
+        
+
+        return res;
+    } 
+    AirPathFinder calckPath() {
+        visited.add(
+            new LinkedLocation()
+                .withCurrent(finish)
+                .withCounter(0)
+        );
+
+        var allFromCurrentLevel = getAllFromLevel(counter).toList();
+        //check if end it 
+        while (!visitedAsLocations().contains(start)) {
+
+            allFromCurrentLevel.stream()
+                .map(l -> 
+                    getNonVisitedEmptyNear(
+                        l.getCurrent()
+                    ).map(
+                        i -> new LinkedLocation()
+                            .withCurrent(i)
+                            .withParent(l)
+                            .withCounter(counter + 1)
+                    ).toList()
+                )
+                .forEach(list -> visited.addAll(list));;
+
+            counter ++;
+
+            if (counter > 50) {
+                return this;
+            }
+            allFromCurrentLevel = getAllFromLevel(counter).toList();
+        }
+        
+        return this;
+    }
+    
+    // List<Location> getPath() {
+        
+    //     var queue = new ArrayDeque<LinkedLocation>();
+    //     counter = 0;
+
+    //     var current = new LinkedLocation()
+    //         .withCurrent(finish.clone());
+        
+    //         queue.add(current);
+
+    //     while (!current.getCurrent().equals(start)) {
+    //         // find nearby
+    //         var nearby = getNonVisitedEmptyNear(
+    //             queue.stream().map(i -> i.getCurrent()).toList(),
+    //             current.getCurrent()
+    //         );
+
+    //         // add path back from nearby
+    //         nearby.stream()
+    //             .map(it -> new LinkedLocation()
+    //                 .withCounter(current.getCounter() + 1)
+    //                 .withParent(current.getParent())
+    //                 .withCurrent(it)
+    //             ).forEach(queue::add);;
+
+    //         //var 
+    //         if (queue.stream().filter(l -> l.getCounter() == counter).toList().isEmpty()) {
+    //         //if (count(where loc.counter == count).isEmpty) {
+    //             counter ++;
+    //         }
+
+    //         //            
+    //         //set current = random(where loc.counter == counter)
+    //     }
+
+    //     return null;
+
+    // }
+}
 
 class UserScenario extends BaseScenario {
 
