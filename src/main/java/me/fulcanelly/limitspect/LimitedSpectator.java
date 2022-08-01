@@ -7,6 +7,7 @@ import java.net.Socket;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -555,7 +556,7 @@ class AirPathFinder {
     }
 
     Stream<Location> getNonVisitedEmptyNear(Location loc) {
-        var near = Stream.of(
+        var near = new ArrayList<>(Stream.of(
             loc.clone().add(-1, 0, 0),
             loc.clone().add(1, 0, 0),
             loc.clone().add(0, 1, 0),
@@ -566,7 +567,8 @@ class AirPathFinder {
             l -> l.getBlock().isEmpty()
         ).filter(
             l -> ! visitedAsLocations().stream().anyMatch(i -> l.equals(i))
-        ).toList();
+        ).toList());
+        Collections.shuffle(near);
 
         // System.out.println("visited: " + visitedAsLocations());
         // System.out.println("near List: " + near);
